@@ -13,6 +13,8 @@
   "license": "ISC",
   "packageManager": "pnpm@10.30.3",
   "dependencies": {
+    "@fastify/cors": "^11.2.0",
+    "@prisma/client": "^7.8.0",
     "database": "workspace:*",
     "fastify": "^5.8.5"
   },

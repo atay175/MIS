@@ -7,50 +7,113 @@ datasource db {
 
 }
 
+// ==========================================
+// User & Patient Models
+// ==========================================
 model Patient {
   id        String   @id @default(uuid())
   firstName String
   lastName  String
   phone     String
+  email     String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
 
+// ==========================================
+// W12: Multibranch & Employees
+// ==========================================
 model Branch {
-  id        String     @id @default(uuid())
+  id        String   @id @default(uuid())
   name      String
-  createdAt DateTime   @default(now())
-  updatedAt DateTime   @updatedAt
-  employees EmployeeBranch[]
+  brand     String?
+  address   String?
+  phone     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  employees  EmployeeBranch[]
+  services   Service[]
+  categories ServiceCategory[]
+}
+
+enum SystemRole {
+  SUPER_ADMIN
+  NETWORK_OWNER
+  NONE
 }
 
 model Employee {
-  id        String     @id @default(uuid())
-  firstName String
-  lastName  String
-  email     String     @unique
-  createdAt DateTime   @default(now())
-  updatedAt DateTime   @updatedAt
-  branches  EmployeeBranch[]
+  id         String     @id @default(uuid())
+  firstName  String
+  lastName   String
+  email      String     @unique
+  phone      String?
+  systemRole SystemRole @default(NONE)
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
+
+  branches EmployeeBranch[]
+}
+
+enum BranchRole {
+  BRANCH_DIRECTOR
+  HEAD_DOCTOR
+  DOCTOR
+  ADMIN
+  NURSE
 }
 
 model EmployeeBranch {
-  id         String   @id @default(uuid())
-  employee   Employee @relation(fields: [employeeId], references: [id])
+  id         String     @id @default(uuid())
+  employee   Employee   @relation(fields: [employeeId], references: [id])
   employeeId String
-  branch     Branch   @relation(fields: [branchId], references: [id])
+  branch     Branch     @relation(fields: [branchId], references: [id])
   branchId   String
-  role       String   @default("DOCTOR")
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  role       BranchRole @default(DOCTOR)
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
+
+  @@unique([employeeId, branchId])
+}
+
+// ==========================================
+// W11: Service Catalog & Pricing
+// ==========================================
+model ServiceCategory {
+  id       String  @id @default(uuid())
+  name     String
+  branch   Branch  @relation(fields: [branchId], references: [id])
+  branchId String
+
+  parentId String?
+  parent   ServiceCategory?  @relation("CategoryToCategory", fields: [parentId], references: [id])
+  children ServiceCategory[] @relation("CategoryToCategory")
+
+  services Service[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model Service {
-  id          String   @id @default(uuid())
+  id          String  @id @default(uuid())
   name        String
+  code        String?
   description String?
-  price       Float
-  duration    Int      // in minutes
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  duration    Int     // in minutes
+  isActive    Boolean @default(true)
+
+  branch   Branch @relation(fields: [branchId], references: [id])
+  branchId String
+
+  category   ServiceCategory? @relation(fields: [categoryId], references: [id])
+  categoryId String?
+
+  basePrice     Float @default(0)
+  specialPrice  Float?
+  employeePrice Float?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
